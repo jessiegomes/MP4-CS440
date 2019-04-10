@@ -34,7 +34,7 @@ class Agent:
         self.s = None
         self.a = None
 
-    def createStateRepresentation(state):
+    def makeState(self, state):
         snake_x = state[0]
         snake_y = state[1]
         food_x = state[3]
@@ -42,57 +42,57 @@ class Agent:
         body = state[2]
 
         ## wall left or right
-        if (snake_y == 40):
+        if (snake_x == 40):
             adjoining_walls_x = 1
-        elif (snake_y == 480):
+        elif (snake_x == 480):
             adjoining_walls_x = 2
         else:
             adjoining_walls_x = 0
         ## wall up or down
-        if (snake_x == 40):
+        if (snake_y == 40):
             adjoining_walls_y = 1
-        elif (snake_x == 480):
+        elif (snake_y == 480):
             adjoining_walls_y = 2
         else:
             adjoining_walls_y = 0
         ## food direction left or right
         if (food_y < snake_y):
-            food_dir_x = 1
-        elif (food_y > snake_y):
-            food_dir_x = 2
-        else:
-            food_dir_x = 0
-        ## food direction up or down
-        if (food_x < snake_x):
             food_dir_y = 1
-        elif (food_x > snake_x):
+        elif (food_y > snake_y):
             food_dir_y = 2
         else:
             food_dir_y = 0
+        ## food direction up or down
+        if (food_x < snake_x):
+            food_dir_x = 1
+        elif (food_x > snake_x):
+            food_dir_x = 2
+        else:
+            food_dir_x = 0
         ## is body on top
-        new_x = snake_x - 40
-        new_y = snake_y
+        new_x = snake_x
+        new_y = snake_y - 40
         if (new_x, new_y) in body:
             adjoining_body_top = 1
         else:
              adjoining_body_top = 0
         ## is body on bottom
-        new_x = snake_x + 40
-        new_y = snake_y
+        new_x = snake_x
+        new_y = snake_y + 40
         if (new_x, new_y) in body:
             adjoining_body_bottom = 1
         else:
              adjoining_body_bottom = 0
         ## is body on left
-        new_x = snake_x
-        new_y = snake_y - 40
+        new_x = snake_x - 40
+        new_y = snake_y
         if (new_x, new_y) in body:
             adjoining_body_left = 1
         else:
              adjoining_body_left = 0
         ## is body on right
-        new_x = snake_x
-        new_y = snake_y + 40
+        new_x = snake_x + 40
+        new_y = snake_y
         if (new_x, new_y) in body:
             adjoining_body_right = 1
         else:
@@ -113,16 +113,70 @@ class Agent:
         (Note that [adjoining_wall_x=0, adjoining_wall_y=0] is also the case when snake runs out of the 480x480 board)
 
         '''
+        curr_state = self.makeState(state)
 
-        utility_per_action = np.zeros(4)
-        for i in range(actions):
-            if i == 0:    #Right 
-                
-            elif i == 1:  #Left
+        ## choosing which action to pick
+        utility = np.zeros(4)
+        for i in range(len(self.actions)):
+            N_val = self.N[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][i]
+            Q_val = self.Q[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][i]
+            if N_val < self.Ne:
+                utility[i] = 1
+            else:
+                utility[i] = Q_val
+        idxs = np.argwhere(utility == np.amax(utility))
+        action = idxs[len(idxs)-1]
 
-            elif i == 2:  #Down
+        ## updating N(s,a)
+        self.N[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action] += 1
+        
 
-            elif i == 3:  #Up
+        ## updating Q(s,a) 
+
+        #alpha
+        alpha = self.C / (self.C + self.N[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action])
+
+        #R(s)
+        if (state[0] == state[3] and state[1] == state[4]):
+            R = 1
+        elif state[0] < 40 or state[0] > 480 or state[1] < 40 or state[1] > 480 or (state[0], state[1]) in state[2]:
+            R = -1
+        else:
+            R = -0.1
+
+        
+        ## Finding Q(s', a')
+        ## s' 
+        if (action == 0):
+            new_snake_y = state[1] - 40
+            s_prime = self.makeState([state[0], new_snake_y, state[2], state[3], state[4]])
+        if (action == 1):
+            new_snake_y = state[1] + 40
+            s_prime = self.makeState([state[0], new_snake_y, state[2], state[3], state[4]])
+        if (action == 2):
+            new_snake_x = state[0] - 40
+            s_prime = self.makeState([new_snake_x, state[1], state[2], state[3], state[4]])
+        if (action == 3):
+            new_snake_x = state[0] + 40
+            s_prime = self.makeState([new_snake_x, state[1], state[2], state[3], state[4]])
+
+        ## max Q(s', a')
+        next_utility = np.zeros(4)
+        for i in range(len(self.actions)):
+            N_val = self.N[s_prime[0]][s_prime[1]][s_prime[2]][s_prime[3]][s_prime[4]][s_prime[5]][s_prime[6]][s_prime[7]][i]
+            Q_val = self.Q[s_prime[0]][s_prime[1]][s_prime[2]][s_prime[3]][s_prime[4]][s_prime[5]][s_prime[6]][s_prime[7]][i]
+            if N_val < self.Ne:
+                next_utility[i] = 1
+            else:
+                next_utility[i] = Q_val
+        idxs = np.argwhere(next_utility == np.amax(next_utility))
+        a_prime = idxs[len(idxs)-1]
+
+        #Q_val
+        Q_val = self.Q[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action]
+
+        self.Q[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action] = Q_val + alpha * (R + self.gamma*a_prime - Q_val)
+        # print(self.Q[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action])
 
 
-        return self.actions[0]
+        return action
