@@ -68,16 +68,65 @@ def four_nn():
         This is a great time to review on your linear algebra as well.
 """
 def affine_forward(A, W, b):
+    n = A.shape[0]
+    d = np.prod(A.shape[1:])
+    A2 = np.reshape(A, (n, d))
+    Z = np.dot(A2, W) + b
+    cache = (A, W, b)
+    # print(Z)
     return Z, cache
 
 def affine_backward(dZ, cache):
+    dA, dW, dB = None, None, None
+    A, W, b = cache
+    n = A.shape[0]
+    d = np.prod(A.shape[1:])
+    A2 = np.reshape(A, (n, d))
+
+    old_dA = np.dot(dZ, W.T)
+    dW = np.dot(A2.T, dZ)
+    dB = np.dot(dZ.T, np.ones(n))
+    dA = np.reshape(old_dA, A.shape)
+    # print(dA, dW, dB)
     return dA, dW, dB
 
 def relu_forward(Z):
+    A = np.maximum(0, Z)
+    cache = Z
+    # print(A)
     return A, cache
 
-def relu_backward(dA, cache):
+def relu_backward(dZ, cache):
+    Z = cache
+    dA = np.array(dZ, copy=True)
+    dA[Z <= 0] = 0
+    # print(dA)
     return dA
 
 def cross_entropy(F, y):
-    return loss, dF
+    loss = 0
+    f_0 = len(F)
+    f_1 = len(F[0])
+    y_len = len(y)
+    for a in range(f_0):
+        loss += F[a][int(y[a])]
+        exp_sum = 0
+        for b in range(f_1):
+            exp_sum += np.exp(F[a][b])
+        loss -= np.log(exp_sum)
+    loss = (-1 * loss) / y_len
+
+    df = F
+    flog=0
+        
+    for a in range(f_0):
+        # flog = np.sum(np.exp(F))
+        flog = 0
+        for b in range(f_1):
+            flog += np.exp(F[a][b])
+        for b in range(f_1):
+            temp = np.exp(F[a][b]) / flog
+            df[a][b] = (-1) * (1*(b == y[a]) - temp) / y_len
+    print(loss)
+    print(df)
+    return loss, df
