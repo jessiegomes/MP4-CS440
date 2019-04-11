@@ -11,6 +11,7 @@ class Agent:
         self.C = C
         self.gamma = gamma
         self.first = True
+        self.track_actions = []
 
         # Create the Q and N Table to work with
         self.Q = utils.create_q_table()
@@ -34,6 +35,8 @@ class Agent:
         self.points = 0
         self.s = None
         self.a = None
+        self.first = True
+        self.track_actions = []
 
     def makeState(self, state):
         snake_x = state[0]
@@ -101,23 +104,23 @@ class Agent:
         return (adjoining_walls_x, adjoining_walls_y, food_dir_x, food_dir_y, adjoining_body_top, adjoining_body_bottom, adjoining_body_left, adjoining_body_right)
 
     # TAKEN FROM MOVE(...) IN SNAKE.PY
-    def check_alive(self, state, action, points):
+    def check_alive(self, state, action):
         track_head = None
         if len(state[2]) == 1:
             track_head = state[2][0]
         state[2].append((state[0], state[1]))
         if action == 0:
-            state[1] -= utils.GRID_SIZE
+            state[1] -= 40
         elif action == 1:
-            state[1] += utils.GRID_SIZE
+            state[1] += 40
         elif action == 2:
-            state[0] -= utils.GRID_SIZE
+            state[0] -= 40
         elif action == 3:
-            state[0] += utils.GRID_SIZE
+            state[0] += 40
 
         # check body length less than points
-        if len(state[2]) > points:
-            del(state[2][0])
+        # if len(state[2]) > points:
+        del(state[2][0])
 
         if len(state[2]) >= 1:
             for seg in state[2]:
@@ -128,13 +131,38 @@ class Agent:
             if track_head == (state[0], state[1]):
                 return False
 
-        if (state[0] < utils.GRID_SIZE or state[1] < utils.GRID_SIZE or
-            state[0] + utils.GRID_SIZE > utils.DISPLAY_SIZE-utils.GRID_SIZE or state[1] + utils.GRID_SIZE > utils.DISPLAY_SIZE-utils.GRID_SIZE):
+        if (state[0] < 40 or state[1] < 40 or
+            state[0] + 40 > 520 or state[1] + 40 > 520):
             return False
 
         return True
 
+    def compute_q(self, state, action):
+        curr_state = self.makeState(state)
+        #a
+        alpha = self.C / (self.C + self.N[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action])
 
+        #R(s)
+        if (state[0] == state[3] and state[1] == state[4]):
+            R = 1
+        elif not self.check_alive(state, action):
+            R = -1
+        else:
+            R = -0.1
+
+        s_U = self.makeState([state[0], state[1] - 40, state[2], state[3], state[4]])
+        s_D = self.makeState([state[0], state[1] + 40, state[2], state[3], state[4]])
+        s_L = self.makeState([state[0] - 40, state[1], state[2], state[3], state[4]])
+        s_R = self.makeState([state[0] + 40, state[1], state[2], state[3], state[4]])
+        q_U = self.Q[s_U[0]][s_U[1]][s_U[2]][s_U[3]][s_U[4]][s_U[5]][s_U[6]][s_U[7]][0]
+        q_D = self.Q[s_D[0]][s_D[1]][s_D[2]][s_D[3]][s_D[4]][s_D[5]][s_D[6]][s_D[7]][1]
+        q_L = self.Q[s_L[0]][s_L[1]][s_L[2]][s_L[3]][s_L[4]][s_L[5]][s_L[6]][s_L[7]][2]
+        q_R = self.Q[s_R[0]][s_R[1]][s_R[2]][s_R[3]][s_R[4]][s_R[5]][s_R[6]][s_R[7]][3]
+        a_prime = max(q_U, q_D, q_L, q_R)
+
+        #Q_val
+        Q_val = self.Q[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action]
+        return ( Q_val + alpha * (R + self.gamma*a_prime - Q_val) )
 
 
     def act(self, state, points, dead):
@@ -164,48 +192,17 @@ class Agent:
         idxs = utility[::-1]
         action = np.argmax(idxs)
         action = 3 - action
-        
+        self.track_actions.append(action)
+
         # idxs = np.argwhere(utility == np.amax(utility))
         # action = idxs[len(idxs)-1]
 
-        # self.actions.append(action)
         ## updating N(s,a)
-
-
         self.N[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action] += 1
 
-        if dead:
-            print(state[0], state[1])
-            print("POINTS: ", points)
-            self.reset()
-            return        
-        ## updating Q(s,a) 
-
-        #alpha
-        alpha = self.C / (self.C + self.N[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action])
-
-        #R(s)
-        if (state[0] == state[3] and state[1] == state[4]):
-            R = 1
-        elif not self.check_alive(state, action, points):
-            R = -1
-        else:
-            R = -0.1
-
-        s_U = self.makeState([state[0], state[1] - 40, state[2], state[3], state[4]])
-        s_D = self.makeState([state[0], state[1] + 40, state[2], state[3], state[4]])
-        s_L = self.makeState([state[0] - 40, state[1], state[2], state[3], state[4]])
-        s_R = self.makeState([state[0] + 40, state[1], state[2], state[3], state[4]])
-        n_U = self.Q[s_U[0]][s_U[1]][s_U[2]][s_U[3]][s_U[4]][s_U[5]][s_U[6]][s_U[7]][0]
-        n_D = self.Q[s_D[0]][s_D[1]][s_D[2]][s_D[3]][s_D[4]][s_D[5]][s_D[6]][s_D[7]][1]
-        n_L = self.Q[s_L[0]][s_L[1]][s_L[2]][s_L[3]][s_L[4]][s_L[5]][s_L[6]][s_L[7]][2]
-        n_R = self.Q[s_R[0]][s_R[1]][s_R[2]][s_R[3]][s_R[4]][s_R[5]][s_R[6]][s_R[7]][3]
-        a_prime = max(n_U, n_D, n_L, n_R)
-
-        #Q_val
-        Q_val = self.Q[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action]
+        new_q = self.compute_q(state, action)
         if not self.first:
-            self.Q[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action] = Q_val + alpha * (R + self.gamma*a_prime - Q_val)
+            self.Q[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action] = new_q
         else:
             self.first = False
 
@@ -242,7 +239,14 @@ class Agent:
         # a_prime = idxs[len(idxs)-1]
         """
 
-
         # print(self.Q[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action])
+        if dead:
+            print("GAME OVER")
+            print(state[0], state[1])
+            print("POINTS: ", points)
+            print("ACTIONS: ", self.track_actions)
+            self.Q[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action] = self.compute_q(state, action, points)
+            self.reset()
+            return 
 
         return action
