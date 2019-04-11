@@ -30,6 +30,7 @@ class Agent:
         self.Q = utils.load(model_path)
 
     def reset(self):
+        self.actions = []
         self.points = 0
         self.s = None
         self.a = None
@@ -99,6 +100,42 @@ class Agent:
              adjoining_body_right = 0
         return (adjoining_walls_x, adjoining_walls_y, food_dir_x, food_dir_y, adjoining_body_top, adjoining_body_bottom, adjoining_body_left, adjoining_body_right)
 
+    # TAKEN FROM MOVE(...) IN SNAKE.PY
+    def check_alive(self, state, action, points):
+        track_head = None
+        if len(state[2]) == 1:
+            track_head = state[2][0]
+        state[2].append((state[0], state[1]))
+        if action == 0:
+            state[1] -= utils.GRID_SIZE
+        elif action == 1:
+            state[1] += utils.GRID_SIZE
+        elif action == 2:
+            state[0] -= utils.GRID_SIZE
+        elif action == 3:
+            state[0] += utils.GRID_SIZE
+
+        # check body length less than points
+        if len(state[2]) > points:
+            del(state[2][0])
+
+        if len(state[2]) >= 1:
+            for seg in state[2]:
+                if state[0] == seg[0] and state[1] == seg[1]:
+                    return False
+
+        if len(state[2]) == 1:
+            if old_body_head == (state[0], state[1]):
+                return False
+
+        if (state[0] < utils.GRID_SIZE or state[1] < utils.GRID_SIZE or
+            state[0] + utils.GRID_SIZE > utils.DISPLAY_SIZE-utils.GRID_SIZE or state[1] + utils.GRID_SIZE > utils.DISPLAY_SIZE-utils.GRID_SIZE):
+            return False
+
+        return True
+
+
+
 
     def act(self, state, points, dead):
         '''
@@ -139,12 +176,11 @@ class Agent:
         #R(s)
         if (state[0] == state[3] and state[1] == state[4]):
             R = 1
-        elif state[0] < 40 or state[0] > 480 or state[1] < 40 or state[1] > 480 or (state[0], state[1]) in state[2]:
+        elif not self.check_alive(state, action, points):
             R = -1
         else:
             R = -0.1
 
-        
         ## Finding Q(s', a')
         ## s' 
         if (action == 0):
@@ -177,6 +213,11 @@ class Agent:
 
         self.Q[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action] = Q_val + alpha * (R + self.gamma*a_prime - Q_val)
         # print(self.Q[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action])
-
+        self.actions.append(action)
+        if dead:
+            print(state[0], state[1])
+            print("POINTS: ", points)
+            self.reset()
+            return
 
         return action
