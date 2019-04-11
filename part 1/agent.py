@@ -10,6 +10,7 @@ class Agent:
         self.Ne = Ne # used in exploration function
         self.C = C
         self.gamma = gamma
+        self.first = True
 
         # Create the Q and N Table to work with
         self.Q = utils.create_q_table()
@@ -30,7 +31,6 @@ class Agent:
         self.Q = utils.load(model_path)
 
     def reset(self):
-        self.actions = []
         self.points = 0
         self.s = None
         self.a = None
@@ -125,7 +125,7 @@ class Agent:
                     return False
 
         if len(state[2]) == 1:
-            if old_body_head == (state[0], state[1]):
+            if track_head == (state[0], state[1]):
                 return False
 
         if (state[0] < utils.GRID_SIZE or state[1] < utils.GRID_SIZE or
@@ -149,25 +149,36 @@ class Agent:
         Tips: you need to discretize the state to the state space defined on the webpage first.
         (Note that [adjoining_wall_x=0, adjoining_wall_y=0] is also the case when snake runs out of the 480x480 board)
 
-        '''
+        '''       
         curr_state = self.makeState(state)
 
         ## choosing which action to pick
         utility = np.zeros(4)
-        for i in range(len(self.actions)):
+        for i in range(4):
             N_val = self.N[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][i]
             Q_val = self.Q[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][i]
             if N_val < self.Ne:
                 utility[i] = 1
             else:
                 utility[i] = Q_val
-        idxs = np.argwhere(utility == np.amax(utility))
-        action = idxs[len(idxs)-1]
-
-        ## updating N(s,a)
-        self.N[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action] += 1
+        idxs = utility[::-1]
+        action = np.argmax(idxs)
+        action = 3 - action
         
+        # idxs = np.argwhere(utility == np.amax(utility))
+        # action = idxs[len(idxs)-1]
 
+        # self.actions.append(action)
+        ## updating N(s,a)
+
+
+        self.N[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action] += 1
+
+        if dead:
+            print(state[0], state[1])
+            print("POINTS: ", points)
+            self.reset()
+            return        
         ## updating Q(s,a) 
 
         #alpha
@@ -181,6 +192,24 @@ class Agent:
         else:
             R = -0.1
 
+        s_U = self.makeState([state[0], state[1] - 40, state[2], state[3], state[4]])
+        s_D = self.makeState([state[0], state[1] + 40, state[2], state[3], state[4]])
+        s_L = self.makeState([state[0] - 40, state[1], state[2], state[3], state[4]])
+        s_R = self.makeState([state[0] + 40, state[1], state[2], state[3], state[4]])
+        n_U = self.Q[s_U[0]][s_U[1]][s_U[2]][s_U[3]][s_U[4]][s_U[5]][s_U[6]][s_U[7]][0]
+        n_D = self.Q[s_D[0]][s_D[1]][s_D[2]][s_D[3]][s_D[4]][s_D[5]][s_D[6]][s_D[7]][1]
+        n_L = self.Q[s_L[0]][s_L[1]][s_L[2]][s_L[3]][s_L[4]][s_L[5]][s_L[6]][s_L[7]][2]
+        n_R = self.Q[s_R[0]][s_R[1]][s_R[2]][s_R[3]][s_R[4]][s_R[5]][s_R[6]][s_R[7]][3]
+        a_prime = max(n_U, n_D, n_L, n_R)
+
+        #Q_val
+        Q_val = self.Q[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action]
+        if not self.first:
+            self.Q[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action] = Q_val + alpha * (R + self.gamma*a_prime - Q_val)
+        else:
+            self.first = False
+
+        """
         ## Finding Q(s', a')
         ## s' 
         if (action == 0):
@@ -198,26 +227,22 @@ class Agent:
 
         ## max Q(s', a')
         next_utility = np.zeros(4)
-        for i in range(len(self.actions)):
+        for i in range(4):
             N_val = self.N[s_prime[0]][s_prime[1]][s_prime[2]][s_prime[3]][s_prime[4]][s_prime[5]][s_prime[6]][s_prime[7]][i]
             Q_val = self.Q[s_prime[0]][s_prime[1]][s_prime[2]][s_prime[3]][s_prime[4]][s_prime[5]][s_prime[6]][s_prime[7]][i]
             if N_val < self.Ne:
                 next_utility[i] = 1
             else:
                 next_utility[i] = Q_val
-        idxs = np.argwhere(next_utility == np.amax(next_utility))
-        a_prime = idxs[len(idxs)-1]
 
-        #Q_val
-        Q_val = self.Q[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action]
+        idxs = next_utility[::-1]
+        a_prime = np.argmax(idxs)
+        a_prime = 3 - a_prime
+        # idxs = np.argwhere(next_utility == np.amax(next_utility))
+        # a_prime = idxs[len(idxs)-1]
+        """
 
-        self.Q[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action] = Q_val + alpha * (R + self.gamma*a_prime - Q_val)
+
         # print(self.Q[curr_state[0]][curr_state[1]][curr_state[2]][curr_state[3]][curr_state[4]][curr_state[5]][curr_state[6]][curr_state[7]][action])
-        self.actions.append(action)
-        if dead:
-            print(state[0], state[1])
-            print("POINTS: ", points)
-            self.reset()
-            return
 
         return action
