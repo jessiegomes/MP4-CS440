@@ -152,14 +152,11 @@ class Agent:
         else:
             R = -0.1
 
-        s_U = self.makeState([state[0], state[1] - 40, state[2], state[3], state[4]])
-        s_D = self.makeState([state[0], state[1] + 40, state[2], state[3], state[4]])
-        s_L = self.makeState([state[0] - 40, state[1], state[2], state[3], state[4]])
-        s_R = self.makeState([state[0] + 40, state[1], state[2], state[3], state[4]])
-        q_U = self.Q[s_U[0]][s_U[1]][s_U[2]][s_U[3]][s_U[4]][s_U[5]][s_U[6]][s_U[7]][0]
-        q_D = self.Q[s_D[0]][s_D[1]][s_D[2]][s_D[3]][s_D[4]][s_D[5]][s_D[6]][s_D[7]][1]
-        q_L = self.Q[s_L[0]][s_L[1]][s_L[2]][s_L[3]][s_L[4]][s_L[5]][s_L[6]][s_L[7]][2]
-        q_R = self.Q[s_R[0]][s_R[1]][s_R[2]][s_R[3]][s_R[4]][s_R[5]][s_R[6]][s_R[7]][3]
+        s_ = self.makeState([state[0], state[1], state[2], state[3], state[4]])
+        q_U = self.Q[s_[0]][s_[1]][s_[2]][s_[3]][s_[4]][s_[5]][s_[6]][s_[7]][0]
+        q_D = self.Q[s_[0]][s_[1]][s_[2]][s_[3]][s_[4]][s_[5]][s_[6]][s_[7]][1]
+        q_L = self.Q[s_[0]][s_[1]][s_[2]][s_[3]][s_[4]][s_[5]][s_[6]][s_[7]][2]
+        q_R = self.Q[s_[0]][s_[1]][s_[2]][s_[3]][s_[4]][s_[5]][s_[6]][s_[7]][3]
         a_prime = max(q_U, q_D, q_L, q_R)
 
         #Q_val
@@ -193,7 +190,9 @@ class Agent:
             return 
 
         if (self.s != None and self.a != None):
-            self.compute_q(self.s, self.a, state, dead, points)
+            prev_state = self.makeState(self.s)
+            new_q = self.compute_q(self.s, self.a, state, dead, points)
+            self.Q[prev_state[0]][prev_state[1]][prev_state[2]][prev_state[3]][prev_state[4]][prev_state[5]][prev_state[6]][prev_state[7]][self.a] = new_q
 
 
         ## choosing which action to pick

@@ -153,14 +153,14 @@ def main():
     parser.add_argument('--window', dest="window", type=int, default=100,
                         help='number of episodes to keep running stats for during training - default 100')
 
-    parser.add_argument('--Ne', dest="Ne", type=int, default=40,
+    parser.add_argument('--Ne', dest="Ne", type=int, default=20,
                         help='the Ne parameter used in exploration function - default 40')
 
-    parser.add_argument('--C', dest="C", type=int, default=40,
+    parser.add_argument('--C', dest="C", type=int, default=60,
                         help='the C parameter used in learning rate - default 40')
 
-    parser.add_argument('--gamma', dest="gamma", type=float, default=0.7,
-                        help='the gamma paramter used in learning rate - default 0.7')
+    parser.add_argument('--gamma', dest="gamma", type=float, default=0.5,
+                        help='the gamma paramter used in learning rate - default 0.5')
 
     parser.add_argument('--snake_head_x', dest="snake_head_x", type=int, default=200,
                         help='initialized x position of snake head  - default 200')
