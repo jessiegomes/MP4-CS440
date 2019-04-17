@@ -152,7 +152,7 @@ class Agent:
         else:
             R = -0.1
 
-        s_ = self.makeState([state[0], state[1], state[2], state[3], state[4]])
+        s_ = self.makeState(state)
         q_U = self.Q[s_[0]][s_[1]][s_[2]][s_[3]][s_[4]][s_[5]][s_[6]][s_[7]][0]
         q_D = self.Q[s_[0]][s_[1]][s_[2]][s_[3]][s_[4]][s_[5]][s_[6]][s_[7]][1]
         q_L = self.Q[s_[0]][s_[1]][s_[2]][s_[3]][s_[4]][s_[5]][s_[6]][s_[7]][2]
