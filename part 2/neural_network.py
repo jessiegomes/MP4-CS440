@@ -35,7 +35,7 @@ def minibatch_gd(epoch, w1, w2, w3, w4, b1, b2, b3, b4, x_train, y_train, num_cl
         for i in range(1, len(x_train)/batch_size):
             x = x_train[((i-1)*batch_size):(i*batch_size)]
             y = y_train[((i-1)*batch_size):(i*batch_size)]
-            loss = four_nn(x, w1, w2, w3, w4, b1, b2, b3, b4, y, not shuffle)
+            w1, w2, w3, w4, loss = four_nn(x, w1, w2, w3, w4, b1, b2, b3, b4, y, not shuffle)
 
     return w1, w2, w3, w4, b1, b2, b3, b4, loss
 
@@ -57,8 +57,18 @@ def minibatch_gd(epoch, w1, w2, w3, w4, b1, b2, b3, b4, x_train, y_train, num_cl
 """
 def test_nn(w1, w2, w3, w4, b1, b2, b3, b4, x_test, y_test, num_classes):
 
+    classifications = four_nn(x_test, w1, w2, w3, w4, b1, b2, b3, b4, y_test, True)
     avg_class_rate = 0.0
     class_rate_per_class = [0.0] * num_classes
+    class_totals = [0.0] * num_classes
+    for i in range(len(x_test)):
+        if y_test[i] == classifications[i]:
+            class_rate_per_class += 1
+            avg_class_rate += 1
+        class_totals[y_test[i]] += 1
+    for i in range(num_classes):
+        class_rate_per_class[i] /= class_totals[i]
+    avg_class_rate /= len(y_test)
     return avg_class_rate, class_rate_per_class
 
 """
@@ -86,7 +96,7 @@ def four_nn(x, w1, w2, w3, w4, b1, b2, b3, b4, y, test):
     dz1 = relu_backward(da1, rc1)
     dx, dw1, db1 = affine_backward(dz1, ac1)
     w1 = w1 - eta*dw1
-    return loss
+    return w1, w2, w3, w4, loss
 
 """
     Next five functions will be used in four_nn() as helper functions.
