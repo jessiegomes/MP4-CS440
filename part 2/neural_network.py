@@ -32,7 +32,7 @@ def minibatch_gd(epoch, w1, w2, w3, w4, b1, b2, b3, b4, x_train, y_train, num_cl
             np.random.shuffle(x_train)
             np.random.set_state(og_state)
             np.random.shuffle(y_train)
-        for i in range(1, len(x_train)/batch_size):
+        for i in range(1, len(x_train)//batch_size):
             x = x_train[((i-1)*batch_size):(i*batch_size)]
             y = y_train[((i-1)*batch_size):(i*batch_size)]
             w1, w2, w3, w4, loss = four_nn(x, w1, w2, w3, w4, b1, b2, b3, b4, y, not shuffle)
@@ -82,20 +82,25 @@ def four_nn(x, w1, w2, w3, w4, b1, b2, b3, b4, y, test):
     z1, ac1 = affine_forward(x, w1, b1)
     a1, rc1 = relu_forward(z1)
     z2, ac2 = affine_forward(a1, w2, b2)
-    a2, rc2 = relu_forward(z2, w2, b2)
+    a2, rc2 = relu_forward(z2)
     z3, ac3 = affine_forward(a2, w3, b3)
-    a3, rc3 = relu_forward(z3, w3, b3)
+    a3, rc3 = relu_forward(z3)
     f, ac4 = affine_forward(a3, w4, b4)
     if test:
         classifications = [np.argmax(x) for x  in f]
         return classifications
     loss, df = cross_entropy(f, y)
-    da2, dw3, db3 = affine_backward(df, ac3)
+    da3, dw4, db4 = affine_backward(df, ac4)
+    dz3 = relu_backward(da3, rc3)
+    da2, dw3, db3 = affine_backward(dz3, ac3)
     dz2 = relu_backward(da2, rc2)
     da1, dw2, db2 = affine_backward(dz2, ac2)
     dz1 = relu_backward(da1, rc1)
     dx, dw1, db1 = affine_backward(dz1, ac1)
     w1 = w1 - eta*dw1
+    w2 = w2 - eta*dw2
+    w3 = w3 - eta*dw3
+    w4 = w4 - eta*dw4
     return w1, w2, w3, w4, loss
 
 """
@@ -119,14 +124,10 @@ def affine_forward(A, W, b):
 def affine_backward(dZ, cache):
     dA, dW, dB = None, None, None
     A, W, b = cache
-    n = A.shape[0]
-    d = np.prod(A.shape[1:])
-    A2 = np.reshape(A, (n, d))
-
-    old_dA = np.dot(dZ, W.T)
-    dW = np.dot(A2.T, dZ)
+    dA = np.dot(dZ, W)
+    dW = np.dot(A.T, dZ)
     dB = np.dot(dZ.T, np.ones(n))
-    dA = np.reshape(old_dA, A.shape)
+
     # print(dA, dW, dB)
     return dA, dW, dB
 
