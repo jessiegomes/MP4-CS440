@@ -117,7 +117,7 @@ def affine_forward(A, W, b):
     d = np.prod(A.shape[1:])
     A2 = np.reshape(A, (n, d))
     Z = np.dot(A2, W) + b
-    cache = (A, W, b)
+    cache = (A, W.T, b)
     # print(Z)
     return Z, cache
 
@@ -126,6 +126,7 @@ def affine_backward(dZ, cache):
     A, W, b = cache
     dA = np.dot(dZ, W)
     dW = np.dot(A.T, dZ)
+    n = A.shape[0]
     dB = np.dot(dZ.T, np.ones(n))
 
     # print(dA, dW, dB)
@@ -168,6 +169,6 @@ def cross_entropy(F, y):
         for b in range(f_1):
             temp = np.exp(F[a][b]) / flog
             df[a][b] = (-1) * (1*(b == y[a]) - temp) / y_len
-    print(loss)
-    print(df)
+    # print(loss)
+    # print(df)
     return loss, df
