@@ -166,7 +166,7 @@ def main():
                         help='initialized x position of snake head  - default 80')
 
     parser.add_argument('--snake_head_y', dest="snake_head_y", type=int, default=80,
-                        help='initialized y position of snake head  - default 90')
+                        help='initialized y position of snake head  - default 80')
 
     parser.add_argument('--food_x', dest="food_x", type=int, default=200,
                         help='initialized x position of food  - default 200')

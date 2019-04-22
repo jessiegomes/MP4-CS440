@@ -25,8 +25,8 @@ def minibatch_gd(epoch, w1, w2, w3, w4, b1, b2, b3, b4, x_train, y_train, num_cl
 
     #IMPLEMENT HERE
     batch_size = 200
-
-    for e in range(1, epoch):
+    ret_loss = []
+    for e in range(epoch):
         if shuffle:
             og_state = np.random.get_state()
             np.random.shuffle(x_train)
@@ -36,8 +36,9 @@ def minibatch_gd(epoch, w1, w2, w3, w4, b1, b2, b3, b4, x_train, y_train, num_cl
             x = x_train[((i-1)*batch_size):(i*batch_size)]
             y = y_train[((i-1)*batch_size):(i*batch_size)]
             w1, w2, w3, w4, loss = four_nn(x, w1, w2, w3, w4, b1, b2, b3, b4, y, not shuffle)
+        ret_loss.append(loss)
 
-    return w1, w2, w3, w4, b1, b2, b3, b4, loss
+    return w1, w2, w3, w4, b1, b2, b3, b4, ret_loss
 
 """
     Use the trained weights & biases to see how well the nn performs
@@ -63,7 +64,7 @@ def test_nn(w1, w2, w3, w4, b1, b2, b3, b4, x_test, y_test, num_classes):
     class_totals = [0.0] * num_classes
     for i in range(len(x_test)):
         if y_test[i] == classifications[i]:
-            class_rate_per_class += 1
+            class_rate_per_class[y_test[i]] += 1
             avg_class_rate += 1
         class_totals[y_test[i]] += 1
     for i in range(num_classes):
