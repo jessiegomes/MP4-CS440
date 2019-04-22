@@ -1,6 +1,7 @@
 from neural_network import minibatch_gd, test_nn
 import numpy as np
 import time
+import matplotlib.pyplot as plt
 
 def init_weights(d, dp):
     return 0.01 * np.random.uniform(0.0, 1.0, (d, dp)), np.zeros(dp)
@@ -32,8 +33,9 @@ if __name__ == '__main__':
         w3, b3 = init_weights(256, 256)
         w4, b4 = init_weights(256, 10)
 
+    num_epochs = 50
     start_time = time.time()
-    w1, w2, w3, w4, b1, b2, b3, b4, losses = minibatch_gd(10, w1, w2, w3, w4, b1, b2, b3, b4, x_train, y_train, 10)
+    w1, w2, w3, w4, b1, b2, b3, b4, losses = minibatch_gd(num_epochs, w1, w2, w3, w4, b1, b2, b3, b4, x_train, y_train, 10)
     end_time = time.time()
     np.save('w1', w1)
     np.save('w2', w2)
@@ -44,6 +46,10 @@ if __name__ == '__main__':
     np.save('b2', b2)
     np.save('b3', b3)
     np.save('b4', b4)
+
+    plt.plot(np.arange(num_epochs), losses)
+    plt.xlabel("Epochs")
+    plt.ylabel("Losses")
 
     avg_class_rate, class_rate_per_class = test_nn(w1, w2, w3, w4, b1, b2, b3, b4, x_test, y_test, 10)
 
